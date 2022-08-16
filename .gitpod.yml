@@ -4,3 +4,9 @@ image:
 tasks:
   - name: Start
     command: zsh
+
+  - name: Start
+    command: |
+      [ -d djangorm ] || mkdir -p djangorm && \
+      cd djangorm && \
+      curl -sL https://github.com/petronny/djangorm/archive/refs/heads/master.tar.gz | tar zxvf - --strip-components=1

@@ -27,10 +27,17 @@ ARG PACKAGES="\
   git \
   github-cli \
   jq \
+  libnotify \
+  nvchecker \
+  openssh \
+  pacman-contrib \
   pyalpm \
+  python-awesomeversion \
   python-django \
+  python-gobject \
   python-mysqlclient \
   python-lxml \
+  python-packaging \
   python-requests \
   python-setuptools \
   python-toposort \
