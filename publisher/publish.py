@@ -11,24 +11,30 @@ if __name__ == '__main__':
     from pathlib import Path
     from .. import config, logger
     from ..common.util import run, symlink
-    from ..models import Status, Version
+    from ..models import Status, Version, Package
 
     repository = Path('repository')
 
     for record in Status.objects.filter(status='BUILT'):
         if not repository.exists():
-            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{os.environ["REMOTE_PATH"]}/*', repository])
+            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
 
         workflow = record.workflow
+        basename = record.key.split('/')[-1]
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
             run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
-            run(['gh', 'run', 'download', workflow, '-n', f'{workflow}.package', '-R', config['github']['cactus']])
+            run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
         except:
             logger.error('Failed to download %s', record.key)
             continue
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
+
+        if len(packages) > 0:
+            for package_record in Package.objects.filter(key=record.key):
+                package_record.age += 1
+                package_record.save()
 
         for package in packages:
             if 'COLON' in package.name:
@@ -56,7 +62,11 @@ if __name__ == '__main__':
                     run(['repo-add', db, repository / arch / package.name])
                     time.sleep(1)
 
-            run(['sh', '-c', f'rsync -avP repository/* repository:{os.environ["REMOTE_PATH"]}'])
+            run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+
+            package_record = Package(key=record.key, package=package.name)
+            package_record.save()
+
             logger.info('Published %s', package.name)
 
         connection.connect()

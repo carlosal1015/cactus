@@ -7,6 +7,8 @@ _eval(){
 }
 
 pre_build(){
+	oldver=$(read-version)
+
 	_pre_build=$(yq -r '.pre_build' cactus.yaml)
 	_eval $_pre_build
 
@@ -15,11 +17,16 @@ pre_build(){
 
 	# Recieve GPG keys
 	recv-gpg-keys || :
+
+	makepkg -A -od --noprepare
+	newver=$(read-version)
+	auto-bump-pkgrel "$oldver" "$newver"
 }
 
 post_build(){
 	_post_build=$(yq -r '.post_build' cactus.yaml)
 	_eval $_post_build
+	echo 'Cactus has successfully built the package.'
 }
 
 set_cpu(){
