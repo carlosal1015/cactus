@@ -14,7 +14,7 @@ def resolve_depends(repository, pkgbase, result, key='depends'):
             pkgbase, pkgname = list(i.keys())[0], list(i.values())[0]
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
-                if not 'recursive' in i or i['recursive']:
+                if pkgbase != 'pacman' and (not 'recursive' in i or i['recursive']):
                     result = resolve_depends(repository, pkgbase, result) 
         else:
             pkgbase, pkgname = i, i.split('/')[-1]
@@ -55,6 +55,15 @@ if __name__ == '__main__':
 
     for pkgbase, pkgname in all_depends:
         connection.connect()
+
+        if pkgbase == 'pacman':
+            try:
+                logger.info(f'Downloading {pkgname} with pacman ...')
+                run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
+            except:
+                raise Exception(f'Failed to download {pkgname} with pacman.')
+            continue
+
         try:
             status = Status.objects.get(key=pkgbase)
         except:
@@ -69,18 +78,21 @@ if __name__ == '__main__':
                 downloaded = True
             except:
                 if status:
-                    logger.warning(f'Failed to download pkgname with pacman.')
+                    logger.warning(f'Failed to download {pkgname} with pacman.')
                 else:
-                    raise(f'Failed to download pkgname with pacman.')
+                    raise(f'Failed to download {pkgname} with pacman.')
 
         if not downloaded:
             logger.info(f'Downloading {pkgname} from {pkgbase} in {status.workflow} ...')
             basename = status.key.split('/')[-1]
             try:
-                run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
                 run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
             except:
-                raise Exception(f'Failed to download {pkgname}.')
+                try:
+                    run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
+                    run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
+                except:
+                    raise Exception(f'Failed to download {pkgname}.')
 
             packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
