@@ -14,7 +14,7 @@ runs:
     - name: Get time
       id: time
       shell: bash -e {0}
-      run: echo "::set-output name=time::$(date +%F-%T)"
+      run: echo "time=$(date +%F-%T)" >> $GITHUB_OUTPUT
 
     - name: Set up pacman package cache
       uses: actions/cache@master
@@ -23,6 +23,15 @@ runs:
         key: pacman-package-${{ inputs.arch }}-${{ steps.time.outputs.time }}
         restore-keys: pacman-package-${{ inputs.arch }}-
 
+    - name: Generate default secret key
+      shell: bash -e {0}
+      run: pacman-key --init
+
     - name: Upgrade the system
       shell: bash -e {0}
       run: pacman -Syu --noconfirm
+
+    - name: Cleanup pacman cache
+      uses: webiny/action-post-run@3.0.0
+      with:
+        run: pacman -Sc --noconfirm

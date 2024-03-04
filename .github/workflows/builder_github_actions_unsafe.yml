@@ -1,4 +1,4 @@
-name: Builder (Github Actions)
+name: Builder (Github Actions Unsafe)
 
 run-name: Build ${{ inputs.pkgbase }}
 
@@ -16,10 +16,14 @@ jobs:
     container:
       image: archlinux
       options: --privileged
+      volumes:
+        - /:/ubuntu
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
+      - uses: arch4edu/cactus/actions/clean-up-ubuntu@main
+
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies

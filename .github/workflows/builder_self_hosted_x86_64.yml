@@ -1,5 +1,7 @@
 name: Builder (Self-hosted x86_64)
 
+run-name: Build ${{ inputs.pkgbase }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -28,8 +30,9 @@ jobs:
           rm -rf /var/lib/pacman/sync
           ln -sf /mnt/sync /var/lib/pacman/sync
           [ -f /mnt/mirrorlist ] && cp /mnt/mirrorlist /etc/pacman.d/
+          pacman-key --init
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget pyalpm python-mysqlclient yq zsh
+          pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 

@@ -1,0 +1,57 @@
+#!/usr/bin/python
+import contextlib
+import io
+import tarfile
+import tempfile
+
+from elftools.elf.elffile import ELFFile
+from elftools.elf.dynamic import DynamicSection
+from Namcap.util import is_elf
+from pyzstd import decompress_stream
+
+def scanlibs(fileobj):
+    if not is_elf(fileobj):
+        return []
+
+    elffile = ELFFile(fileobj)
+    sharedlibs = []
+    for section in elffile.iter_sections():
+        if not isinstance(section, DynamicSection):
+            continue
+        for tag in section.iter_tags():
+            # DT_NEEDED means shared library
+            if tag.entry.d_tag != 'DT_NEEDED':
+                continue
+            libname = tag.needed
+            sharedlibs.append(libname)
+    return sharedlibs
+
+
+@contextlib.contextmanager
+def ZstdTarReader(name, *, zstd_dict=None, option=None, **kwargs):
+    with io.open(name, "rb") as ifh:
+        with tempfile.TemporaryFile() as tmp_file:
+            decompress_stream(ifh, tmp_file, zstd_dict=zstd_dict, option=option)
+            tmp_file.seek(0)
+            with tarfile.TarFile(fileobj=tmp_file, **kwargs) as tar:
+                yield tar
+
+
+def get_sodepends(package):
+    sodepends = set()
+
+    with ZstdTarReader(package) as tar:
+        pkg_so_files = [i.split("/")[-1] for i in tar.getnames() if ".so" in i]
+
+        files = [i for i in tar.getmembers() if i.isfile()]
+        for file in files:
+            file = tar.extractfile(file)
+            sodepends.update(scanlibs(file))
+        sodepends = sorted([i for i in sodepends if not i in pkg_so_files])
+    return sodepends
+
+
+if __name__ == "__main__":
+    import sys
+
+    print('\n'.join(get_sodepends(sys.argv[1])))

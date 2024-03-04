@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
         download_artifact_package(workflow, pkgbase)
 
+        connection.connect()
         for package_record in Package.objects.filter(key=record.key):
             package_record.age += 1
             package_record.save()
@@ -48,13 +49,16 @@ if __name__ == '__main__':
                     symlink(Path('..') / 'any' / f'{package.name}.sig', repository / arch / f'{package.name}.sig')
                     repo_add(repository, arch, repository / arch / package.name)
 
+            with open(repository / 'lastupdate', 'w') as f:
+                f.write(str(int(time.time())))
+
             run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
 
+            connection.connect()
             package_record = Package(key=record.key, package=package.name)
             package_record.save()
 
             logger.info('Published %s', package.name)
 
-        connection.connect()
         record.status = 'PUBLISHED'
         record.save()
