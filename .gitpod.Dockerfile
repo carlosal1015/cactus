@@ -5,13 +5,15 @@ RUN --mount=type=tmpfs,target=/var/cache/pacman \
   sed -i 's/^#Color/Color/' /etc/pacman.conf && \
   sed -i '/#CheckSpace/a ILoveCandy' /etc/pacman.conf && \
   sed -i 's/^ParallelDownloads = 5/ParallelDownloads = 30/' /etc/pacman.conf && \
-  sed -i 's/^VerbosePkgLists/#VerbosePkgLists/' /etc/pacman.conf && \
-  sed -i 's/ usr\/share\/doc\/\*//g' /etc/pacman.conf && \
-  sed -i 's/usr\/share\/man\/\* //g' /etc/pacman.conf && \
+  printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf && \
+  echo -e '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf && \
   sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf && \
   sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf && \
   sed -i 's/^#PACKAGER=\"John Doe <john@doe.com/PACKAGER=\"Auto update bot <auto-update-bot@jingbei.li/' /etc/makepkg.conf && \
-  echo -e '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf && \
+  sed -i 's/^#GPGKEY=\"/GPGKEY=\"5BC6FBBAB02C73E4724B2CFC8C43C00BA8F06ECA/' /etc/makepkg.conf && \
+  sed -i 's/purge debug lto/purge !debug !lto/' /etc/makepkg.conf && \
+  sed -i 's/man,//g' /etc/makepkg.conf && \
+  sed -i 's/doc,//g' /etc/makepkg.conf && \
   useradd -l -u 33333 -md /home/gitpod -s /bin/bash gitpod && \
   passwd -d gitpod && \
   echo 'gitpod ALL=(ALL) ALL' > /etc/sudoers.d/gitpod && \
@@ -49,9 +51,11 @@ ARG PACKAGES="\
   "
 
 RUN curl -s https://gitlab.com/dune-archiso/dune-archiso.gitlab.io/-/raw/main/templates/add_arch4edu.sh | bash && \
-  sudo pacman --needed --noconfirm --noprogressbar -Syyuq && \
+  sudo pacman --needed --noconfirm --noprogressbar -Syuq >/dev/null 2>&1 && \
   sudo pacman --needed --noconfirm --noprogressbar -S ${PACKAGES} && \
-  sudo systemctl enable docker && \
+  sudo mkdir -p /etc/docker && \
+  sudo systemctl enable docker.socket && \
+  sudo usermod -a -G docker gitpod && \
   sudo pacman -Scc <<< Y <<< Y && \
   sudo rm -r /var/lib/pacman/sync/* && \
   printf 'Y\n' | bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
