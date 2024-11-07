@@ -1,4 +1,4 @@
-name: "Remove unwanted software in ubuntu-lastest"
+name: "Remove unwanted software in ubuntu-latest"
 inputs:
   root:
     description: 'root where ubuntu is mounted'
@@ -7,10 +7,36 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: webiny/action-post-run@3.1.0
+      with:
+        run: sh -c "arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Installed-Size}\t${Package}\t${Status}\n' | grep installed | sort -n"
+
     - shell: bash -e {0}
       run: |
-        echo ${{ runner.name }}
         df -h
+
+        arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Package}\t${Status}\n' | grep installed | cut -f1 > /tmp/ubuntu-packages.txt
+
+        arch-chroot ${{ inputs.root }} apt-get autoremove -y \
+          gcc g++ gcc-{9,10,11,12} g++-{9,10,11,12} \
+          llvm-{13,14,15} clang-{13,14,15} clang-format-{13,14,15} libllvm{13,14,15} lld-{13,14,15}\
+          dotnet-sdk-{6,7,8}.0 $(grep -P 'libmono-' /tmp/ubuntu-packages.txt) \
+          java-common temurin-{8,11,17,21}-jdk \
+          $(grep php8.1 /tmp/ubuntu-packages.txt) ruby \
+          $(grep -P '^r-' /tmp/ubuntu-packages.txt) \
+          mysql-client mysql-server \
+          google-cloud-cli azure-cli powershell\
+          microsoft-edge-stable google-chrome-stable firefox
+
         cd ${{ inputs.root }}
-        rm -rf usr/share/dotnet usr/local/lib/android opt/ghc opt/hostedtoolcache/CodeQL
+
+        for i in usr/local/lib/android opt/hostedtoolcache/CodeQL usr/share/swift usr/local/.ghcup usr/share/miniconda usr/local/julia* usr/local/share/powershell usr/local/share/chromium opt/hostedtoolcache/Python opt/hostedtoolcache/go opt/hostedtoolcache/PyPy home/runneradmin/.rustup etc/skel/.rustup home/runner/.rustup
+        do
+          [ ! -d $i ] && continue
+          du -sh $i
+          rm -r $i
+        done
+
         df -h
+
+        sudo du -h . --exclude={mnt,proc,snap,var/lib/docker/overlay2} | sort -rh | grep -P '^[1-9][0-9][0-9]M|G\t'

@@ -37,7 +37,7 @@ jobs:
           status: building
           workflow: ${{ github.run_id }}
 
-      - uses: actions/checkout@master
+      - uses: actions/checkout@main
         with:
           repository: ${{ steps.config.outputs.github_repository }}
           path: repository
@@ -63,6 +63,9 @@ jobs:
 
       - name: Download dependencies
         run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
+
+      - name: Collect telemetry
+        uses: catchpoint/workflow-telemetry-action@master
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
