@@ -6,7 +6,6 @@ RUN --mount=type=tmpfs,target=/var/cache/pacman \
   sed -i '/#CheckSpace/a ILoveCandy' /etc/pacman.conf && \
   sed -i 's/^ParallelDownloads = 5/ParallelDownloads = 30/' /etc/pacman.conf && \
   printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf && \
-  echo -e '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf && \
   sed -i 's/^#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf && \
   sed -i 's/^#BUILDDIR/BUILDDIR/' /etc/makepkg.conf && \
   sed -i 's/^#PACKAGER=\"John Doe <john@doe.com/PACKAGER=\"Auto update bot <auto-update-bot@jingbei.li/' /etc/makepkg.conf && \
