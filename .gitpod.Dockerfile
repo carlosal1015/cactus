@@ -26,6 +26,7 @@ ARG PACKAGES="\
   act \
   devtools \
   dbus \
+  docker \
   git \
   github-cli \
   jq \
