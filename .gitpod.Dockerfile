@@ -67,4 +67,6 @@ RUN curl -s https://gitlab.com/dune-archiso/dune-archiso.gitlab.io/-/raw/main/te
 }
 EOF
 
+EXPOSE 3306
+
 ENV SHELL=/usr/bin/zsh

@@ -10,3 +10,6 @@ tasks:
       [ -d /workspace/djangorm ] || mkdir -p /workspace/djangorm && \
       cd /workspace/djangorm && \
       curl -sL https://github.com/petronny/djangorm/archive/refs/heads/master.tar.gz | tar zxvf - --strip-components=1
+
+ports:
+  - port: 3306
