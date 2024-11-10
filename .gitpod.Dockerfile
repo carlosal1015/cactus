@@ -40,6 +40,7 @@ ARG PACKAGES="\
   python-mysqlclient \
   python-lxml \
   python-packaging \
+  python-pygithub \
   python-requests \
   python-setuptools \
   python-toposort \
