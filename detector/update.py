@@ -1,7 +1,6 @@
 #!/bin/python
 
 if __name__ == '__main__':
-    import os
     import sys
     import json
     from datetime import datetime, timedelta
@@ -85,7 +84,7 @@ if __name__ == '__main__':
             status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
-        elif status.status == 'FAILED' and datetime.now() - status.timestamp > timedelta(days=1):
+        elif status.status == 'FAILED' and datetime.now() - status.timestamp.replace(tzinfo=None) > timedelta(days=1):
             status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: try to rebuild {record.newver}')
